@@ -1,0 +1,58 @@
+/* Add or update your CSS styles */
+/* Root Variables */
+:root {
+    --body-bg: rgb(238, 238, 238);
+    --white: #ffffff;
+    --darkWhite: #ccc;
+    --black: #000000;
+    --dark: #333333;
+    --themeColor: #22b8d1;
+    --pageShadow: 0 0 0.5cm rgba(0, 0, 0, 0.5);
+  }
+  
+  /* Font Include */
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600&display=swap');
+  
+  body {
+    background-color: var(--body-bg);
+    font-family: 'Rajdhani', sans-serif;
+  }
+  
+  /* Page Structure */
+  .page {
+    background: var(--white);
+    margin: 0 auto;
+    box-shadow: var(--pageShadow);
+  }
+  
+  /* Table Styles */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th,
+  td {
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid var(--darkWhite);
+  }
+  
+  th {
+    background-color: var(--themeColor);
+    color: var(--white);
+  }
+  
+  /* Button Styles */
+  button {
+    cursor: pointer;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+  }
+  
+  /* Modal Styles */
+  .modal {
+    /* Add your modal styles here */
+  }
+  

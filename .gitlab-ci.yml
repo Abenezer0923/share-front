@@ -1,0 +1,24 @@
+#DONOT MODIFY THIS FILE
+stages:
+  - containerization
+  - deploy
+
+#MASTER | PRODUCTION
+containerization:
+  stage: containerization
+  tags:
+    - pbeth-runner
+  only:
+    - main
+  script:
+    - docker build --no-cache --build-arg NODE_ENV=production -t shms_userdashboard_img .
+deployment:
+  stage: deploy
+  tags:
+    - pbeth-runner
+  only:
+    - main
+  script:
+    - docker stop shms_userdashboard_container || true
+    - docker rm shms_userdashboard_container || true
+    - docker run -d --restart unless-stopped --name=shms_userdashboard_container -p 5052:3000 shms_userdashboard_img
