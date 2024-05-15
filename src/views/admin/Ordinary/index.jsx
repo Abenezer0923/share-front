@@ -43,6 +43,7 @@ export default function UserReports() {
   const [rest, setRest] = useState(false);
   const [isnewPaymentPendingOrder, setIsnewPaymentPendingOrder] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -115,6 +116,9 @@ export default function UserReports() {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+        if (!error.response) { // Network error
+          setIsError(true);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -141,12 +145,26 @@ export default function UserReports() {
       </Flex>
     );
   }
+  if (isError) {
+    return (
+      <Flex
+        pt={{ base: "130px", md: "80px", xl: "80px" }}
+        height="100vh"
+        justify="center"
+        align="center"
+      >
+        <Text fontSize="xl" color="red.500">
+          There is no internet connection. Please check your network and try again.
+        </Text>
+      </Flex>
+    );
+  }
   // console.log("this is the id", data.shareHolderId);
   console.log("index.js", isnewPaymentPendingOrder);
 
   return (
     <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 2 }} gap="25px" mb="20px">
+      <SimpleGrid columns={{ base: 2, md: 2, lg: 3, xl: 2 }} gap="25px" mb="20px">
         {data && data.currentShareInfo !== null && rest && <Ordinary />}
         <Total />
       </SimpleGrid>

@@ -377,13 +377,7 @@ export default function TotalSpent(props) {
   const boxBg = useColorModeValue("secondaryGray.300", "whiteAlpha.100");
 
   return (
-    <Card
-      justifyContent="center"
-      align="center"
-      direction="column"
-      w={{ base: "90%", md: "80%", lg: "70%", xl: "80%" }}
-      p={{ base: "20px", md: "40px" }}
-    >
+    <Card justifyContent="center" align="center" direction="column" p={{ base: 4, md: 6, lg: 8 }}>
       <Toaster position="top-center" reverseOrder={false}></Toaster>
       {isPaymentPending ? (
         <Text color="#d7a022" fontSize="2xl">
@@ -411,6 +405,7 @@ export default function TotalSpent(props) {
               minH="160px"
               minW={{ base: "100%", lg: "30%" }}
               mr={{ base: 0, lg: "3rem" }}
+              mt={{ base: "2rem", lg: "4rem" }}
             >
               <Text
                 color={textColor}
@@ -426,7 +421,7 @@ export default function TotalSpent(props) {
             </Box>
             <Box
               style={{
-                width: "70%",
+                width: "50%",
                 maxWidth: 200,
                 paddingRight: "0px",
                 marginBottom: "5rem",
@@ -459,8 +454,15 @@ export default function TotalSpent(props) {
           <Box display={isExpanded ? "block" : "none"}>
             {/* Form components go here */}
             <Flex direction="column" mt="2rem">
-              <Text fontSize="lg">Choose Percentage:</Text>
-              <Flex direction="row">
+              <Text me="auto"
+                ml={{ base: "2rem", lg: "2rem" }}
+                color={textColor}
+                fontSize="xl"
+                fontWeight="700"
+                lineHeight="100%">Choose Percentage:</Text>
+              <Flex direction="row"
+              ml={{ base: '2rem', md: '5rem', lg: '3rem' }} // Responsive margin-left
+              mt={{ base: '1rem', md: '2rem', lg: '3rem' }}>
                 {dynamicOptions.map((option) => (
                   <Button
                     key={option.value}
@@ -475,7 +477,8 @@ export default function TotalSpent(props) {
                   </Button>
                 ))}
               </Flex>
-              <Flex>
+              <Flex  ml={{ base: '2rem', md: '5rem', lg: '3rem' }} // Responsive margin-left
+              mt={{ base: '1rem', md: '2rem', lg: '3rem' }}>
                 {calculatedAmount && (
                   <Text fontSize="lg" mt={4}>
                     Calculated amount: {calculatedAmount} birr
@@ -485,6 +488,8 @@ export default function TotalSpent(props) {
             </Flex>
             <Flex
               direction={{ base: "column", lg: "row" }}
+              ml={{ base: '2rem', md: '5rem', lg: '1rem' }} // Responsive margin-left
+              mt={{ base: '1rem', md: '2rem', lg: '3rem' }}
               justify="space-between"
               ps="0px"
               pe="20px"
@@ -504,8 +509,8 @@ export default function TotalSpent(props) {
             </Flex>
             <Flex
               direction={{ base: "column", lg: "row" }}
-              mt={{ base: "3rem", lg: "1rem" }}
-              ml={{ base: "0", lg: "4rem" }}
+              ml={{ base: '2rem', md: '5rem', lg: '1rem' }} // Responsive margin-left
+              mt={{ base: '1rem', md: '2rem', lg: '3rem' }}
             >
               <RadioGroup
                 value={paymentMethod}
@@ -513,7 +518,7 @@ export default function TotalSpent(props) {
               >
                 <VStack align={{ base: "start", lg: "stretch" }} spacing={4}>
                   <Flex direction={{ base: "column", lg: "row" }}>
-                    <Radio value="creditCard">Online Payment</Radio>
+                    <Radio value="creditCard" ml={{ base: "0", lg: "2rem" }}>Online Payment</Radio>
                     <Radio value="bankTransfer" ml={{ base: "0", lg: "2rem" }}>
                       Bank Transfer
                     </Radio>
@@ -530,8 +535,8 @@ export default function TotalSpent(props) {
                     <Box
                       as="img"
                       src={p2}
+                      boxSize={{ base: "60px", lg: "100px" }} 
                       alt="Image 2"
-                      boxSize="100px"
                       objectFit="cover"
                       borderRadius="md"
                       cursor="pointer"
@@ -584,6 +589,7 @@ export default function TotalSpent(props) {
                   fontSize="lg"
                   rightIcon={<FiChevronRight />}
                   onClick={onOpen}
+                  
                 >
                   Select Bank
                 </Button>
@@ -620,24 +626,26 @@ export default function TotalSpent(props) {
                   </PopoverContent>
                 </Popover>
 
-                <Box w={{ base: "100%", lg: "250px" }} mr="0rem">
+                <Box w={{ base: "60%", }}  // Responsive margin-left
+              >
                   <Input
                     ml={{ base: "6", lg: "6" }}
                     mb={2}
-                    fontSize="lg"
+                    fontSize={{ base: "lg", md: "xl" }}
                     placeholder="Enter account number"
                     value={accountNumber}
                     onChange={handleAccountNumberChange}
                   />
                 </Box>
 
-                <Flex>
+                <Flex  ml='4rem' mt='1rem'> 
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
                     style={{ display: "none" }}
                     id="upload"
+                   
                   />
                   <label htmlFor="upload">
                     <Button
@@ -662,22 +670,24 @@ export default function TotalSpent(props) {
                   )}
                 </Flex>
 
-                <Flex mt={{ base: "2rem", lg: "1rem" }}>
+                <Flex mt={{ base: "2rem", lg: "1rem" }} >
                   <Button
                     onClick={() => setIsExpanded(false)}
-                    w={{ base: "100%", lg: "150px" }}
                     color="#ffff"
                     backgroundColor="#d7a022"
-                    fontSize="lg"
+      // Responsive margin-left
+                    w={{ base: '8rem', md: '8rem', lg: '8rem' }}
+                    
                   >
                     Back
                   </Button>
                   <Button
                     ml="1rem"
-                    w={{ base: "100%", lg: "150px" }}
+                    w={{ base: '8rem', md: '8rem', lg: '8rem' }}
+                    
                     color="#ffff"
                     backgroundColor="#d7a022"
-                    fontSize="lg"
+                   
                     onClick={handlePayButtonClick}
                   >
                     Pay

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import toast, { Toaster } from "react-hot-toast";
 
 // Chakra imports
 import {
@@ -62,6 +61,8 @@ import {
 // Assets
 import contentData from "views/admin/default/variables/content.json";
 import axios from "axios";
+import p9 from "../../../../assets/img/arifpay.jpeg";
+import toast, { Toaster } from "react-hot-toast";
 export default function TotalSpent(props) {
   const { isPending, shareHolderId, ...rest } = props;
   console.log("thisss",shareHolderId)
@@ -69,7 +70,9 @@ export default function TotalSpent(props) {
   // console.log("is pendddding", isPending);
   const [currentIndex, setCurrentIndex] = useState(0);
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [onlines, setOnline] = useState("");
   const [quantity, setQuantity] = useState("");
+  
   const [updatePending, setUpdatePending] = useState(isPending)
   const [isExpanded, setIsExpanded] = useState(false);
   const [popoverHeaders, setPopoverHeader] = useState("");
@@ -80,7 +83,7 @@ export default function TotalSpent(props) {
   const [paymentId, setPaymentId] = useState(null);
   const [isPaymentPendings, setIsPaymentPending] = useState(false);
   const [buttonPersent, setButtonPersent] = useState("");
-  
+  const [buttonLabel, setButtonLabel] = useState("TSNM SHARE");
   const [paymentMethod, setPaymentMethod] = useState("bankTransfer");
   const [restShare, setRestShare] = useState(true);
   const [checkboxChecked, setCheckboxChecked] = useState(false);
@@ -88,6 +91,8 @@ export default function TotalSpent(props) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [shareAmount, setShareAmount] = useState("");
   const [calculatedAmount, setCalculatedAmount] = useState(null);
+  const [numberOfShare, setNumberOfShare] = useState("");
+  
 
   const [total, setTotal] = useState(null);
   const [dynamicOptions, setDynamicOptions] = useState([]);
@@ -109,11 +114,19 @@ export default function TotalSpent(props) {
 
   const [data, setData] = useState(null);
 
+  const handleOnlinePayment = (value) => {
+    // Set the payment method to "telebirr"
+    setOnline(value);
+  };
+
   const handlePercentageSelection = (percentage, amount) => {
     const Totalres = amount * 100;
     const res = ((percentage / 100) * Totalres) + (0.05 * Totalres);
     setCalculatedAmount(res);
   };
+  const numberOfShareHandleer = (event) => {
+    setNumberOfShare(event.target.value)
+  }
   const handleAccountNumberChange = (event) => {
     console.log("the Acc num is", event.target.value);
     setAccountNumber(event.target.value);
@@ -122,35 +135,6 @@ export default function TotalSpent(props) {
   const handlePaymentMethodChange = (value) => {
     setPaymentMethod(value);
   };
-
-  const handleTelebirrPay = async () => {
-    // Change this url to the deployed url on production
-    const telebirrPayUrl = "http://localhost:2024/api/payment/telebirr/pay";
-    axios
-      .post(telebirrPayUrl)
-      .then((data) => {
-        if(data.data.data.code==200){
-          // Show Toast Message for the user
-          toast.success("Redirecting to trelebirr checkout page");
-          setTimeout(() => {
-            // console.log({data,code:data.data.data.code,dataum:data.data.data.data,url:data.data.data.data.toPayUrl})
-            // Redirect the user to a telebirr payment checkout
-            
-            window.location.href = data.data.data.data.toPayUrl;
-          }, 2000);
-        }else{
-          toast.error("Error while making a payment with telebirr,please try again !!!");
-        }
-        
-      })
-      .catch((error) => {
-        // Use a logger method on production to trigger the error happening for the user
-        console.log({ error });
-        // Toast an error message to the user
-        toast.error("Error while making a payment with telebirr");
-      });
-  }
-
 
 
 
@@ -165,12 +149,97 @@ export default function TotalSpent(props) {
     setQuantity(value);
   };
 
+  const handlePaymentAndArifPay = async () => {
+    try {
+     const token = localStorage.getItem("token");
+ 
+     const requestData = {
+       percentage: buttonPersent,
+       amount_birr: calculatedAmount,
+       paymentMethod: onlines,
+       payment_id: paymentId,
+       shareHolder_id: shareHolderId,
+       paymentStatus: "Pending",
+       shareCatagory: "tsm",
+       shareType: "tsm",
+     };
+ 
+     const responseFromBack = await axios.post(
+       "http://localhost:2024/api/banktransfer/onlinePayment",
+       requestData,
+       {
+         headers: {
+           Authorization: `${token}`,
+           "Content-Type": "application/json", // Change Content-Type to application/json
+         },
+       }
+     );
+     const mongoId = responseFromBack.data._id;
+     console.log("thiiiiiiiiiiiiiiiiiiiss mongo id", mongoId)
+     handleArifPay(mongoId);
+ 
+     console.log("Response from backend:", responseFromBack.data);
+    } catch (error) {
+     console.error("Error creating MongoDB document:", error);
+     // Handle error
+   }
+   }
+   
+  const handleArifPay = async (mongoId) => {
+    try {
+      // Construct the request payload
+      const requestData = {
+        order_id: mongoId,
+        cancelUrl: "http://localhost:3000/admin/cancel",
+        errorUrl: "http://localhost:3000/admin/error",
+        callbackUrl: "http://localhost:2024/payment/arifpay/callback",
+        successUrl: "http://localhost:3000/admin/success",
+        items: [
+          {
+            name: "Item name",
+            quantity: 1,
+            price: calculatedAmount,
+            image_url: "item-image-url",
+          },
+          // Add more items if needed
+        ],
+      };
+
+      console.log({requestData})
+
+      const ArifPayUrl = "http://localhost:2024/api/payment/arifpay/pay";
+
+      const response = await axios.post(ArifPayUrl,requestData)
+
+
+      // console.log({error:response.data.error})
+  
+     // Handle the response (e.g., redirect user to payment page)
+    //  const paymentSessionId = response.data.session_id;
+     // Redirect user to Arif Pay payment page
+     if(response.data.error == false){
+        window.location.href = response.data.data.paymentUrl;
+      }else{
+        console.error({error:response.data})
+        toast.error(
+          "Error while making a payment with arif-pay,please try again !!!"
+        );
+      }
+
+    console.log({response})
+
+    } catch (error) {
+      console.error("Error initiating Arif Pay payment:", error);
+      // Handle error (e.g., show error message to user)
+    }
+  };
 
   const handlePayButtonClick = async () => {
     try {
       const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append("acc_No", accountNumber);
+      formData.append("numberOfShare", quantity)
       formData.append("percentage", buttonPersent);
       formData.append("amount_birr", calculatedAmount);
       formData.append("image", selectedFile);
@@ -179,6 +248,7 @@ export default function TotalSpent(props) {
       formData.append("shareHolder_id", shareHolderId);
       formData.append("paymentStatus", "Pending");
       formData.append("shareCatagory", "tsm");
+      formData.append("shareType", "tsm")
 
       const responseFromBack = await axios.post(
         "http://localhost:2024/api/orderPayment/bankPayment",
@@ -190,6 +260,41 @@ export default function TotalSpent(props) {
           },
         }
       );
+      const handlePaymentAndArifPay = async () => {
+        try {
+         const token = localStorage.getItem("token");
+     
+         const requestData = {
+           percentage: buttonPersent,
+           amount_birr: calculatedAmount,
+           paymentMethod: onlines,
+           payment_id: paymentId,
+           shareHolder_id: shareHolderId,
+           paymentStatus: "Pending",
+           shareCatagory: "tsm",
+           shareType: "tsm",
+         };
+     
+         const responseFromBack = await axios.post(
+           "http://localhost:2024/api/banktransfer/onlinePayment",
+           requestData,
+           {
+             headers: {
+               Authorization: `${token}`,
+               "Content-Type": "application/json", // Change Content-Type to application/json
+             },
+           }
+         );
+         const mongoId = responseFromBack.data._id;
+         console.log("thiiiiiiiiiiiiiiiiiiiss mongo id", mongoId)
+         handleArifPay(mongoId);
+     
+         console.log("Response from backend:", responseFromBack.data);
+        } catch (error) {
+         console.error("Error creating MongoDB document:", error);
+         // Handle error
+       }
+       }
 
       console.log("Response from backend:", responseFromBack.data);
       // setpaymentOrderStatus("Pending");
@@ -395,7 +500,7 @@ export default function TotalSpent(props) {
                     <Flex direction="column">
                       <Flex align="center" mb={{ base: "1rem", lg: "2rem" }}>
                         <Text color="#d7a022" fontSize="2xl" mr="3rem">
-                          TSM
+                          Tsm
                         </Text>
                         <Box flex="1">
                           <Input
@@ -446,195 +551,191 @@ export default function TotalSpent(props) {
                       >
                         Payment Method
                       </Text>
+                      
                       <Flex
-                        direction="column"
-                        mb={{ base: "2rem", lg: "3rem" }}
-                      >
-                        <RadioGroup
-                          value={paymentMethod}
-                          onChange={handlePaymentMethodChange}
-                        >
-                          <Flex
-                            direction={{ base: "column", lg: "row" }}
-                            align="center"
-                          >
-                            <Radio value="bankTransfer" fontSize="lg">
-                              Bank Transfer
-                            </Radio>
-                          </Flex>
-                        </RadioGroup>
-                        {paymentMethod === "bankTransfer" && (
-                          <>
-                            <Flex>
-                              <Button
-                                mt="1rem"
-                                fontSize="lg"
-                                rightIcon={<FiChevronRight />}
-                                onClick={onOpen}
-                              >
-                                Select Bank
-                              </Button>
-                              <Popover isOpen={isOpen} onClose={onClose}>
-                                <PopoverTrigger>
-                                  <Button mt="4" fontSize="lg">
-                                    {popoverHeaders}
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent>
-                                  <PopoverArrow />
-                                  <PopoverCloseButton />
-                                  <PopoverHeader>Options</PopoverHeader>
-                                  <PopoverBody>
-                                    <List spacing={3}>
-                                      {["Abyssiniya", "СВЕ", "Awash"].map(
-                                        (option, index) => (
-                                          <ListItem
-                                            key={index}
-                                            onClick={() =>
-                                              handleOptionClick(option)
-                                            }
-                                            _hover={{
-                                              background: "gray.100",
-                                              cursor: "pointer",
-                                            }}
-                                            borderRadius="md"
-                                            px={3}
-                                            py={2}
-                                          >
-                                            <Text fontSize="lg">{option}</Text>
-                                          </ListItem>
-                                        )
-                                      )}
-                                    </List>
-                                  </PopoverBody>
-                                </PopoverContent>
-                              </Popover>
-                            </Flex>
-
-                            <Box w="100%" mt="1rem">
-                              <Input
-                                mb="0.5rem"
-                                fontSize="lg"
-                                placeholder="Enter account number"
-                                value={accountNumber}
-                                onChange={handleAccountNumberChange}
-                              />
-                            </Box>
-                          </>
-                        )}
-                        {paymentMethod === "creditCard" && (
-            <Flex justify="space-between" p={4}>
-              {/* Image 1 */}
-              {/* <Link href="" _hover={{ textDecor: "none" }}>
-                <Box
-                  as="img"
-                  src={p1}
-                  alt="Image 1"
-                  boxSize="100px"
-                  objectFit="cover"
-                  borderRadius="md"
-                  cursor="pointer"
-                />
-              </Link> */}
-
-              {/* Image 2 */}
-              {/* <Button onClick={handleTelebirrPay}  */}
-              <Link  onClick={handleTelebirrPay}>
-              <Box
-                  as="img"
-                  src={p2}
-                  alt="Image 2"
-                  boxSize="100px"
-                  objectFit="cover"
-                  borderRadius="md"
-                  cursor="pointer"/>
-
-              </Link>
-
-              {/* Image 3 */}
-              {/* <Link href="#" _hover={{ textDecor: "none" }}>
-                <Box
-                  as="img"
-                  src={p3}
-                  alt="Image 3"
-                  boxSize="100px"
-                  objectFit="cover"
-                  borderRadius="md"
-                  cursor="pointer"
-                />
-              </Link> */}
-
-              {/* Image 4 */}
-              {/* <Link href="" _hover={{ textDecor: "none" }}>
-                <Box
-                  as="img"
-                  src={p4}
-                  alt="Image 4"
-                  boxSize="100px"
-                  objectFit="cover"
-                  borderRadius="md"
-                  cursor="pointer"
-                />
-              </Link> */}
+              direction={{ base: "column", lg: "row" }}
+              mt={{ base: "3rem", lg: "1rem" }}
+              ml={{ base: "0", lg: "4rem" }}
+            >
+              <RadioGroup
+                value={paymentMethod}
+                onChange={handlePaymentMethodChange}
+              >
+                <VStack align={{ base: "start", lg: "stretch" }} spacing={4}>
+                  <Flex direction={{ base: "column", lg: "row" }}>
+                    <Radio value="creditCard" ml={{ base: "0", lg: "2rem" }}>Online Payment</Radio>
+                    <Radio value="bankTransfer" ml={{ base: "0", lg: "2rem" }}>
+                      Bank Transfer
+                    </Radio>
+                  </Flex>
+                </VStack>
+              </RadioGroup>
             </Flex>
-          )}
-                      </Flex>
-                      <Flex
-                        direction="column"
-                        mb={{ base: "2rem", lg: "3rem" }}
-                      >
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          style={{ display: "none" }}
-                          id="upload"
-                        />
-                        <label htmlFor="upload">
-                          <Button
-                            bg="blue.200"
-                            fontSize="sm"
-                            as="span"
-                            leftIcon={<FiCamera />}
+            {paymentMethod === "creditCard" && (
+              <>
+                <Flex>
+                  {/* Image 2 */}
+                  {/* <Button onClick={handleTelebirrPay}  */}
+                  <Link>
+                    <Box
+                      as="img"
+                      src={p2}
+                      alt="Image 2"
+                      boxSize="100px"
+                      objectFit="cover"
+                      borderRadius="md"
+                      cursor="pointer"
+                      onClick={() => handleOnlinePayment("telebirr")}
+                    />
+                  </Link>
+                  <Link>
+                    <Box
+                      as="img"
+                      src={p9}
+                      alt="Image 2"
+                      boxSize="100px"
+                      objectFit="cover"
+                      borderRadius="md"
+                      cursor="pointer"
+                      onClick={() => handleOnlinePayment("ArifPay")}
+                    />
+                  </Link>
+                  
+                </Flex>
+                
+
+                <Flex mt={{ base: "2rem", lg: "1rem" }}>
+                  <Button
+                    onClick={() => setIsExpanded(false)}
+                    w={{ base: "100%", lg: "150px" }}
+                    color="#ffff"
+                    backgroundColor="#d7a022"
+                    fontSize="lg"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    ml="1rem"
+                    w={{ base: "100%", lg: "150px" }}
+                    color="#ffff"
+                    backgroundColor="#d7a022"
+                    fontSize="lg"
+                    onClick={handlePaymentAndArifPay}
+                  >
+                    Pay
+                  </Button>
+                </Flex>
+              </>
+            )}
+            {paymentMethod === "bankTransfer" && (
+              <>
+                <Button
+                  mt="4"
+                  fontSize="lg"
+                  rightIcon={<FiChevronRight />}
+                  onClick={onOpen}
+                >
+                  Select Bank
+                </Button>
+
+                <Popover isOpen={isOpen} onClose={onClose}>
+                  <PopoverTrigger>
+                    <Button mt="4" fontSize="lg">
+                      {popoverHeaders}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <PopoverArrow />
+                    <PopoverCloseButton />
+                    <PopoverHeader>Options</PopoverHeader>
+                    <PopoverBody>
+                      <List spacing={3}>
+                        {["Abyssiniya", "СВЕ", "Awash"].map((option, index) => (
+                          <ListItem
+                            key={index}
+                            onClick={() => handleOptionClick(option)}
+                            _hover={{
+                              background: "gray.100",
+                              cursor: "pointer",
+                            }}
+                            borderRadius="md"
+                            px={3}
+                            py={2}
                           >
-                            Upload Image
-                          </Button>
-                        </label>
-                        {uploadProgress > 0 && (
-                          <div>Progress: {uploadProgress}%</div>
-                        )}
-                        {selectedFile && (
-                          <div>Selected File: {selectedFile.name}</div>
-                        )}
-                        {selectedFile && (
-                          <img
-                            src={selectedFile}
-                            alt="Uploaded"
-                            style={{ maxWidth: "100px", marginTop: "0.5rem" }}
-                          />
-                        )}
-                      </Flex>
-                      <Flex justify="center">
-                        <Button
-                          onClick={() => setIsExpanded(false)}
-                          flex="1"
-                          color="#ffff"
-                          backgroundColor="#d7a022"
-                          fontSize="lg"
-                          mr="0.5rem"
-                        >
-                          Back
-                        </Button>
-                        <Button
-                          flex="1"
-                          color="#ffff"
-                          backgroundColor="#d7a022"
-                          fontSize="lg"
-                          onClick={handlePayButtonClick}
-                        >
-                          Pay
-                        </Button>
-                      </Flex>
+                            <Text fontSize="lg">{option}</Text>
+                          </ListItem>
+                        ))}
+                      </List>
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
+
+                <Box w={{ base: "100%", lg: "250px" }} mr="0rem">
+                  <Input
+                    ml={{ base: "6", lg: "6" }}
+                    mb={2}
+                    fontSize="lg"
+                    placeholder="Enter account number"
+                    value={accountNumber}
+                    onChange={handleAccountNumberChange}
+                  />
+                </Box>
+
+                <Flex>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    style={{ display: "none" }}
+                    id="upload"
+                  />
+                  <label htmlFor="upload">
+                    <Button
+                      bg="blue.200"
+                      fontSize="sm"
+                      as="span"
+                      leftIcon={<FiCamera />}
+                    >
+                      Upload Image
+                    </Button>
+                  </label>
+                  {uploadProgress > 0 && <div>Progress: {uploadProgress}%</div>}
+                  {selectedFile && (
+                    <div>Selected File: {selectedFile.name}</div>
+                  )}
+                  {selectedFile && (
+                    <img
+                      src={selectedFile}
+                      alt="Uploaded"
+                      style={{ maxWidth: "100px" }}
+                    />
+                  )}
+                </Flex>
+
+                <Flex mt={{ base: "2rem", lg: "1rem" }}>
+                  <Button
+                    onClick={() => setIsExpanded(false)}
+                    w={{ base: "100%", lg: "150px" }}
+                    color="#ffff"
+                    backgroundColor="#d7a022"
+                    fontSize="lg"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    ml="1rem"
+                    w={{ base: "100%", lg: "150px" }}
+                    color="#ffff"
+                    backgroundColor="#d7a022"
+                    fontSize="lg"
+                    onClick={handlePayButtonClick}
+                  >
+                    Pay
+                  </Button>
+                </Flex>
+              </>
+            )}
+                      
                     </Flex>
                   </Box>
                 </Flex>

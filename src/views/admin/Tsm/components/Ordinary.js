@@ -40,6 +40,7 @@ import {
 
 import p1 from "assets/img/Untitled-removebg-preview.png";
 import p2 from "assets/img/tele.png";
+import p9 from "../../../../assets/img/arifpay.jpeg";
 import p3 from "assets/img/Paypal.png";
 import p4 from "assets/img/visa.jpeg";
 
@@ -60,7 +61,7 @@ export default function TotalSpent(props) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isPaymentPending, setIsPaymentPending] = useState(false);
   const [onlines, setOnline] = useState("");
-
+  const [numberOfShare, setNumberOfShare] = useState("")
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   useEffect(() => {
@@ -98,7 +99,7 @@ export default function TotalSpent(props) {
         }
         setDynamicOptions(options);
 
-        // Check if there are any pending payments for "Tsm" category
+        // Check if there are any pending payments for "tsm" category
         const isPaymentPending = PaymentOrders.some(
           (order) =>
             order.shareCatagory === "tsm" &&
@@ -112,7 +113,90 @@ export default function TotalSpent(props) {
 
     fetchData();
   }, []);
+  const handleArifPay = async (mongoId) => {
+    try {
+      // Construct the request payload
+      const requestData = {
+        order_id: mongoId,
+        cancelUrl: "http://localhost:3000/admin/cancel",
+        errorUrl: "http://localhost:3000/admin/error",
+        callbackUrl: "http://localhost:2024/payment/arifpay/callback",
+        successUrl: "http://localhost:3000/admin/success",
+        items: [
+          {
+            name: "Item name",
+            quantity: 1,
+            price: calculatedAmount,
+            image_url: "item-image-url",
+          },
+          // Add more items if needed
+        ],
+      };
 
+      console.log({requestData})
+
+      const ArifPayUrl = "http://localhost:2024/api/payment/arifpay/pay";
+
+      const response = await axios.post(ArifPayUrl,requestData)
+
+
+      // console.log({error:response.data.error})
+  
+     // Handle the response (e.g., redirect user to payment page)
+    //  const paymentSessionId = response.data.session_id;
+     // Redirect user to Arif Pay payment page
+     if(response.data.error == false){
+        window.location.href = response.data.data.paymentUrl;
+      }else{
+        console.error({error:response.data})
+        toast.error(
+          "Error while making a payment with arif-pay,please try again !!!"
+        );
+      }
+
+    console.log({response})
+
+    } catch (error) {
+      console.error("Error initiating Arif Pay payment:", error);
+      // Handle error (e.g., show error message to user)
+    }
+  };
+  const handlePaymentAndArifPay = async () => {
+   try {
+    const token = localStorage.getItem("token");
+
+    const requestData = {
+      percentage: buttonPersent,
+      amount_birr: calculatedAmount,
+      paymentMethod: onlines,
+      payment_id: paymentId,
+      shareHolder_id: shareHolderId,
+      paymentStatus: "Pending",
+      shareCatagory: "tsm",
+      shareType: "tsm",
+    };
+
+    const responseFromBack = await axios.post(
+      "http://localhost:2024/api/banktransfer/onlinePayment",
+      requestData,
+      {
+        headers: {
+          Authorization: `${token}`,
+          "Content-Type": "application/json", // Change Content-Type to application/json
+        },
+      }
+    );
+    const mongoId = responseFromBack.data._id;
+    console.log("thiiiiiiiiiiiiiiiiiiiss mongo id", mongoId)
+    handleArifPay(mongoId);
+
+    console.log("Response from backend:", responseFromBack.data);
+   } catch (error) {
+    console.error("Error creating MongoDB document:", error);
+    // Handle error
+  }
+  }
+  
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
   };
@@ -179,6 +263,9 @@ export default function TotalSpent(props) {
     console.log("the Acc num is", event.target.value);
     setAccountNumber(event.target.value);
   };
+  const numberOfShareHandleer = (event) => {
+    setNumberOfShare(event.target.value)
+  }
 
   /*
     Author :  Melak Sisay
@@ -197,7 +284,7 @@ export default function TotalSpent(props) {
         shareHolder_id: shareHolderId,
         paymentStatus: "Pending",
         shareCatagory: "tsm",
-        shareType:"tsm",
+        shareType: "tsm",
       };
 
       const responseFromBack = await axios.post(
@@ -213,7 +300,7 @@ export default function TotalSpent(props) {
 
       console.log("Response from backend:", responseFromBack.data);
       // setpaymentOrderStatus("Pending");
-      // setIsPaymentPending(true); // Set the payment as pending
+      setIsPaymentPending(true); // Set the payment as pending
     } catch (error) {
       console.error("Error while sending data:", error);
     }
@@ -247,13 +334,14 @@ export default function TotalSpent(props) {
         // Toast an error message to the user
         toast.error("Error while making a payment with telebirr");
       });
+
+      
   };
 
   const handlePayButtonClick = async () => {
     try {
       const token = localStorage.getItem("token");
       const formData = new FormData();
-      console.log("werrrrrrrrrrrrrrrrrrrrrrrr", calculatedAmount)
       formData.append("acc_No", accountNumber);
       formData.append("percentage", buttonPersent);
       formData.append("amount_birr", calculatedAmount);
@@ -284,20 +372,12 @@ export default function TotalSpent(props) {
     }
   };
 
-  
-
   // Chakra Color Mode
   const textColor = useColorModeValue("secondaryGray.900", "white");
   const boxBg = useColorModeValue("secondaryGray.300", "whiteAlpha.100");
 
   return (
-    <Card
-      justifyContent="center"
-      align="center"
-      direction="column"
-      w={{ base: "90%", md: "80%", lg: "70%", xl: "80%" }}
-      p={{ base: "20px", md: "40px" }}
-    >
+    <Card justifyContent="center" align="center" direction="column" p={{ base: 4, md: 6, lg: 8 }}>
       <Toaster position="top-center" reverseOrder={false}></Toaster>
       {isPaymentPending ? (
         <Text color="#d7a022" fontSize="2xl">
@@ -325,6 +405,7 @@ export default function TotalSpent(props) {
               minH="160px"
               minW={{ base: "100%", lg: "30%" }}
               mr={{ base: 0, lg: "3rem" }}
+              mt={{ base: "2rem", lg: "4rem" }}
             >
               <Text
                 color={textColor}
@@ -340,7 +421,7 @@ export default function TotalSpent(props) {
             </Box>
             <Box
               style={{
-                width: "70%",
+                width: "50%",
                 maxWidth: 200,
                 paddingRight: "0px",
                 marginBottom: "5rem",
@@ -373,8 +454,15 @@ export default function TotalSpent(props) {
           <Box display={isExpanded ? "block" : "none"}>
             {/* Form components go here */}
             <Flex direction="column" mt="2rem">
-              <Text fontSize="lg">Choose Percentage:</Text>
-              <Flex direction="row">
+              <Text me="auto"
+                ml={{ base: "2rem", lg: "2rem" }}
+                color={textColor}
+                fontSize="xl"
+                fontWeight="700"
+                lineHeight="100%">Choose Percentage:</Text>
+              <Flex direction="row"
+              ml={{ base: '2rem', md: '5rem', lg: '3rem' }} // Responsive margin-left
+              mt={{ base: '1rem', md: '2rem', lg: '3rem' }}>
                 {dynamicOptions.map((option) => (
                   <Button
                     key={option.value}
@@ -389,7 +477,8 @@ export default function TotalSpent(props) {
                   </Button>
                 ))}
               </Flex>
-              <Flex>
+              <Flex  ml={{ base: '2rem', md: '5rem', lg: '3rem' }} // Responsive margin-left
+              mt={{ base: '1rem', md: '2rem', lg: '3rem' }}>
                 {calculatedAmount && (
                   <Text fontSize="lg" mt={4}>
                     Calculated amount: {calculatedAmount} birr
@@ -399,6 +488,8 @@ export default function TotalSpent(props) {
             </Flex>
             <Flex
               direction={{ base: "column", lg: "row" }}
+              ml={{ base: '2rem', md: '5rem', lg: '1rem' }} // Responsive margin-left
+              mt={{ base: '1rem', md: '2rem', lg: '3rem' }}
               justify="space-between"
               ps="0px"
               pe="20px"
@@ -418,8 +509,8 @@ export default function TotalSpent(props) {
             </Flex>
             <Flex
               direction={{ base: "column", lg: "row" }}
-              mt={{ base: "3rem", lg: "1rem" }}
-              ml={{ base: "0", lg: "4rem" }}
+              ml={{ base: '2rem', md: '5rem', lg: '1rem' }} // Responsive margin-left
+              mt={{ base: '1rem', md: '2rem', lg: '3rem' }}
             >
               <RadioGroup
                 value={paymentMethod}
@@ -427,7 +518,7 @@ export default function TotalSpent(props) {
               >
                 <VStack align={{ base: "start", lg: "stretch" }} spacing={4}>
                   <Flex direction={{ base: "column", lg: "row" }}>
-                    <Radio value="creditCard">Online Payment</Radio>
+                    <Radio value="creditCard" ml={{ base: "0", lg: "2rem" }}>Online Payment</Radio>
                     <Radio value="bankTransfer" ml={{ base: "0", lg: "2rem" }}>
                       Bank Transfer
                     </Radio>
@@ -437,22 +528,36 @@ export default function TotalSpent(props) {
             </Flex>
             {paymentMethod === "creditCard" && (
               <>
-                <Flex justify="space-between" p={4}>
+                <Flex>
                   {/* Image 2 */}
                   {/* <Button onClick={handleTelebirrPay}  */}
                   <Link>
                     <Box
                       as="img"
                       src={p2}
+                      boxSize={{ base: "60px", lg: "100px" }} 
                       alt="Image 2"
-                      boxSize="100px"
                       objectFit="cover"
                       borderRadius="md"
                       cursor="pointer"
                       onClick={() => handleOnlinePayment("telebirr")}
                     />
                   </Link>
+                  <Link>
+                    <Box
+                      as="img"
+                      src={p9}
+                      alt="Image 2"
+                      boxSize="100px"
+                      objectFit="cover"
+                      borderRadius="md"
+                      cursor="pointer"
+                      onClick={() => handleOnlinePayment("ArifPay")}
+                    />
+                  </Link>
+                  
                 </Flex>
+                
 
                 <Flex mt={{ base: "2rem", lg: "1rem" }}>
                   <Button
@@ -470,7 +575,7 @@ export default function TotalSpent(props) {
                     color="#ffff"
                     backgroundColor="#d7a022"
                     fontSize="lg"
-                    onClick={handleTelebirrPay}
+                    onClick={handlePaymentAndArifPay}
                   >
                     Pay
                   </Button>
@@ -484,6 +589,7 @@ export default function TotalSpent(props) {
                   fontSize="lg"
                   rightIcon={<FiChevronRight />}
                   onClick={onOpen}
+                  
                 >
                   Select Bank
                 </Button>
@@ -520,24 +626,26 @@ export default function TotalSpent(props) {
                   </PopoverContent>
                 </Popover>
 
-                <Box w={{ base: "100%", lg: "250px" }} mr="0rem">
+                <Box w={{ base: "60%", }}  // Responsive margin-left
+              >
                   <Input
                     ml={{ base: "6", lg: "6" }}
                     mb={2}
-                    fontSize="lg"
+                    fontSize={{ base: "lg", md: "xl" }}
                     placeholder="Enter account number"
                     value={accountNumber}
                     onChange={handleAccountNumberChange}
                   />
                 </Box>
 
-                <Flex>
+                <Flex  ml='4rem' mt='1rem'> 
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
                     style={{ display: "none" }}
                     id="upload"
+                   
                   />
                   <label htmlFor="upload">
                     <Button
@@ -562,22 +670,24 @@ export default function TotalSpent(props) {
                   )}
                 </Flex>
 
-                <Flex mt={{ base: "2rem", lg: "1rem" }}>
+                <Flex mt={{ base: "2rem", lg: "1rem" }} >
                   <Button
                     onClick={() => setIsExpanded(false)}
-                    w={{ base: "100%", lg: "150px" }}
                     color="#ffff"
                     backgroundColor="#d7a022"
-                    fontSize="lg"
+      // Responsive margin-left
+                    w={{ base: '8rem', md: '8rem', lg: '8rem' }}
+                    
                   >
                     Back
                   </Button>
                   <Button
                     ml="1rem"
-                    w={{ base: "100%", lg: "150px" }}
+                    w={{ base: '8rem', md: '8rem', lg: '8rem' }}
+                    
                     color="#ffff"
                     backgroundColor="#d7a022"
-                    fontSize="lg"
+                   
                     onClick={handlePayButtonClick}
                   >
                     Pay

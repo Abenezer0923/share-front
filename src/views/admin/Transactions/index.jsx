@@ -1,5 +1,5 @@
 // Chakra imports
-import { Box, SimpleGrid, Flex, Spinner } from "@chakra-ui/react";
+import { Box, SimpleGrid, Flex, Spinner, Text } from "@chakra-ui/react";
 import DevelopmentTable from "views/admin/Transactions/components/DevelopmentTable";
 
 import {
@@ -15,6 +15,7 @@ import axios from "axios";
 export default function Settings() {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,6 +39,9 @@ export default function Settings() {
         });
       } catch (error) {
         console.error("Error fetching data:", error);
+        if (!error.response) { // Network error
+          setIsError(true);
+        }
       } finally {
         setIsLoading(false); // Set loading to false after fetching
       }
@@ -67,6 +71,21 @@ export default function Settings() {
   }
   console.log("setData", data);
   // Chakra Color Mode
+
+  if (isError) {
+    return (
+      <Flex
+        pt={{ base: "130px", md: "80px", xl: "80px" }}
+        height="100vh"
+        justify="center"
+        align="center"
+      >
+        <Text fontSize="xl" color="red.500">
+          There is no internet connection. Please check your network and try again.
+        </Text>
+      </Flex>
+    );
+  }
   return (
     <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
       <SimpleGrid

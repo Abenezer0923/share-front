@@ -10,6 +10,7 @@ import {
     Select,
     SimpleGrid,
     useColorModeValue,
+    
   } from "@chakra-ui/react";
   // Assets
   import Usa from "assets/img/dashboards/usa.png";
@@ -47,6 +48,7 @@ import {
 
     const [data, setData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isError, setIsError] = useState(false);
 
     // Chakra Color Mode
     useEffect(() => {
@@ -127,6 +129,9 @@ import {
           });
         } catch (error) {
           console.error("Error fetching data:", error);
+          if (!error.response) { // Network error
+            setIsError(true);
+          }
         }finally {
           setIsLoading(false); // Set loading to false after fetching
         }
@@ -150,6 +155,21 @@ import {
             emptyColor="gray.200" // Adjust empty color as needed
             style={{ width: "4em", height: "4em" }} // Adjust width and height for larger size
           />
+        </Flex>
+      );
+    }
+
+    if (isError) {
+      return (
+        <Flex
+          pt={{ base: "130px", md: "80px", xl: "80px" }}
+          height="100vh"
+          justify="center"
+          align="center"
+        >
+          <Text fontSize="xl" color="red.500">
+            There is no internet connection. Please check your network and try again.
+          </Text>
         </Flex>
       );
     }
